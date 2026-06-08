@@ -69,10 +69,10 @@ class Upsample(nn.Module):
         assert x.shape[1] == self.in_channels
         if self.dims == 3:
             x = F.interpolate(
-                x, (x.shape[2], x.shape[3] * 2, x.shape[4] * 2), mode="bilinear"
+                x, (x.shape[2], x.shape[3] * 2, x.shape[4] * 2), mode="bilinear", align_corners=False
             )
         else:
-            x = F.interpolate(x, scale_factor=2, mode="bilinear")
+            x = F.interpolate(x, scale_factor=2, mode="bilinear", align_corners=False)
         if self.use_conv:
             x = self.conv(x)
         return x

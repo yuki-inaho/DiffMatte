@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
-from timm.models.layers import DropPath, to_2tuple, trunc_normal_
+from timm.layers import DropPath, to_2tuple, trunc_normal_
 from .backbone import Backbone
 from .utils import SpectralNorm
 
@@ -194,7 +194,7 @@ class PAWSA(nn.Module):
         # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(self.window_size[0])
         coords_w = torch.arange(self.window_size[1])
-        coords = torch.stack(torch.meshgrid([coords_h, coords_w]))
+        coords = torch.stack(torch.meshgrid([coords_h, coords_w], indexing='ij'))
         coords_flatten = torch.flatten(coords, 1)
         relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]
         relative_coords = relative_coords.permute(1, 2, 0).contiguous()
@@ -394,7 +394,7 @@ class PASTBlock(nn.Module):
         x = x + self.drop_path(self.mlp(self.norm2(x)))
 
         if True:
-            priors_after_attn = priors_after_attn.chunk(chunks=self.num_priorset*3, axis=1)
+            priors_after_attn = priors_after_attn.chunk(chunks=self.num_priorset*3, dim=1)
             prior_bins_outs = list()
             for idx in range(self.num_priorset):
                 prior_bin_out = dict()
