@@ -29,6 +29,25 @@ Georgia Tech & Picsart AI Research (PAIR)
 We aim to leverage diffusion to address the challenging image matting task. However, the presence of high computational overhead and the inconsistency of noise sampling between the training and inference processes pose significant obstacles to achieving this goal. In this paper, we present DiffMatte, a solution designed to effectively overcome these challenges. First, DiffMatte decouples the decoder from the intricately coupled matting network design, involving only one lightweight decoder in the iterations of the diffusion process. With such a strategy, DiffMatte mitigates the growth of computational overhead as the number of samples increases. Second, we employ a self-aligned training strategy with uniform time intervals, ensuring a consistent noise sampling between training and inference across the entire time domain. Our DiffMatte is designed with flexibility in mind and can seamlessly integrate into various modern matting architectures. Extensive experimental results demonstrate that DiffMatte not only reaches the state-of-the-art level on the Composition-1k test set, surpassing the best methods in the past by 5\% and 15\% in the SAD metric and MSE metric respectively, but also show stronger generalization ability in other benchmarks. 
 
 
+## uv + ONNX exporter (cu128 branch)
+
+The ONNX path is independent of Detectron2 and uses a CPU PyTorch wheel so export is not tied to a local GPU architecture.
+
+```bash
+uv sync --extra export --extra dev
+uv run diffmatte-export-onnx \
+  --config ViTS_1024 \
+  --checkpoint ../diffmatte_sandbox/checkpoints/DiffMatte_ViTS_Com_1024.pth \
+  --output ../diffmatte_onnx/models/diffmatte_vits_1024_ddim10_643x960.onnx \
+  --height 643 \
+  --width 960 \
+  --steps 10 \
+  --device cpu \
+  --verify
+```
+
+The fixed-shape graph accepts float32 `image`, `trimap`, and `initial_noise` tensors and returns `alpha`. The demonstrated artifact has shapes `image=[1,3,643,960]`, `trimap/initial_noise/alpha=[1,1,643,960]`. See [`docs/ONBOARDING.md`](docs/ONBOARDING.md) for checkpoint provenance, parity validation, and the separate ONNX-only runtime workflow.
+
 ## Quick Installation 
 Our approach is developed in : Python3.88, PyTorch 2.0, CUDA 11.7, CuDNN 8.5.
 

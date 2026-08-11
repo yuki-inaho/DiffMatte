@@ -70,8 +70,29 @@ class SpectralNorm(nn.Module):
         self.module.register_parameter(self.name + "_v", v)
         self.module.register_parameter(self.name + "_bar", w_bar)
 
+    def _normalized_weight(self):
+        if self.module.training:
+            self._update_u_v()
+        u = getattr(self.module, self.name + "_u")
+        v = getattr(self.module, self.name + "_v")
+        w = getattr(self.module, self.name + "_bar")
+        height = w.shape[0]
+        sigma = u.dot(w.view(height, -1).mv(v))
+        return w / sigma.expand_as(w)
+
     def forward(self, *args):
-        # if torch.is_grad_enabled() and self.module.training:
+        # Avoid assigning module.weight during export. All DiffMatte usages wrap Conv2d.
+        if isinstance(self.module, nn.Conv2d):
+            weight = self._normalized_weight()
+            return F.conv2d(
+                args[0],
+                weight,
+                self.module.bias,
+                self.module.stride,
+                self.module.padding,
+                self.module.dilation,
+                self.module.groups,
+            )
         if self.module.training:
             self._update_u_v()
         else:

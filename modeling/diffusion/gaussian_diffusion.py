@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
 import os
 import enum
 import math
 import numpy as np
 
-from detectron2.structures import ImageList
 
 def get_named_beta_schedule(schedule_name, num_diffusion_timesteps):
     """

@@ -147,7 +147,7 @@ class BasicDownBlock(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
 
-        if self.downsample != None:
+        if self.downsample is not None:
             identity = self.downsample(x)
 
         out += identity
@@ -204,7 +204,7 @@ class BasicUpBlock(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
 
-        if self.upsample != None:
+        if self.upsample is not None:
             identity = self.upsample(x)
 
         out += identity
@@ -332,4 +332,3 @@ if __name__ == '__main__':
     out = model(features, inputs, timesteps)
     phas = out['phas']
     print(phas.shape)
-

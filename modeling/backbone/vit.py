@@ -1,14 +1,19 @@
 import logging
 import math
 from functools import partial
-import fvcore.nn.weight_init as weight_init
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from detectron2.layers import CNNBlockBase, Conv2d, get_norm
-from detectron2.modeling.backbone.fpn import _assert_strides_are_log2_contiguous
-from fairscale.nn.checkpoint import checkpoint_wrapper
-from timm.layers import DropPath, Mlp, trunc_normal_
+from diffmatte_onnx.compat import (
+    CNNBlockBase,
+    Conv2d,
+    DropPath,
+    Mlp,
+    c2_msra_fill,
+    checkpoint_wrapper,
+    get_norm,
+    trunc_normal_,
+)
 from .backbone import Backbone
 from .utils import (
     PatchEmbed,
@@ -154,7 +159,7 @@ class ResBottleneckBlock(CNNBlockBase):
         self.norm3 = get_norm(norm, out_channels)
 
         for layer in [self.conv1, self.conv2, self.conv3]:
-            weight_init.c2_msra_fill(layer)
+            c2_msra_fill(layer)
         for layer in [self.norm1, self.norm2]:
             layer.weight.data.fill_(1.0)
             layer.bias.data.zero_()
