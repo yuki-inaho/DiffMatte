@@ -12,10 +12,10 @@
 ## 2. クリティカルな要求・制約
 
 - 対象 branch は `cu128` (`4d119197...`)。upstream 互換修正を保ったまま exporter を追加している。
-- export 用 uv 環境は CPU PyTorch 2.7.1 を使う。GPU 世代/CUDA toolkit に export 成否を依存させない。
+- export 用 uv 環境は CPU PyTorch（2026-10-17 時点 2.14.1+cpu、Python 3.12）を使う。GPU 世代/CUDA toolkit に export 成否を依存させない。
 - checkpoint loader は OmegaConf の既知メタデータ型だけを safe allowlist し、`weights_only=False` にしない。
 - DDIM は backbone を1回計算し、同じ features を全 step で再利用する。`initial_noise` は明示入力。
-- 実モデルは `N=1/H=643/W=960` 固定。試作資料にあった dynamic batch の主張は実 ONNX metadata と一致しないため採用しない。
+- 実モデルは `N=1/H=643/W=960` 固定。PyTorch 2.7 は batch=1 の見本で batch 次元を 1 に特殊化していたが、2.14 は動的 batch のまま出力するため、exporter は既定で固定形状にし、`--dynamic-batch` 指定時だけ動的 batch にする（CPU ツールは固定形状が必須）。
 - legacy `run_one_image.py` / 学習経路は今回の uv 環境で未検証。新 exporter の確認と混同しない。
 
 ## 3. 参照すべき合意済み資料
@@ -68,7 +68,7 @@
 
 ### 完了ゲート
 
-- [x] uv lock/sync（Python 3.11.14、torch 2.7.1+cpu）。
+- [x] uv lock/sync（Python 3.11.14、torch 2.7.1+cpu）。2026-10-17 に Python 3.12.14、torch 2.14.1+cpu、numpy 2.5.4 へ更新し、test・Ruff・export `--verify`（max `1.5288591384887695e-05`）を再確認。
 - [x] test 6/6、Ruff 成功。
 - [x] checkpoint SHA-256 `685fdd...6029` を strict load。
 - [x] ONNX SHA-256 `d69827...acd6`、118.9 MB、opset 18、checker 合格。
@@ -78,7 +78,7 @@
 
 ### CPU 軽量化（`diffmatte_cpu/` + extra `cpu`、2026-10-17）
 
-- 同じ uv プロジェクトの optional extra `cpu`（numpy 2.3.5、onnx 1.23.2、ORT 1.31.0、onnxsim 0.8.1、OpenVINO 2026.4.1 固定）。これに合わせ `.python-version` を 3.12、base の numpy を `<3` に緩和。Python 3.12.14 / torch 2.7.1+cpu で既存 test 6 件も成功。
+- 同じ uv プロジェクトの optional extra `cpu`（OpenVINO 2026.4.1 だけ固定。onnx/ORT/onnxsim は最新系の範囲指定）。Python 3.12.14、torch 2.14.1+cpu、numpy 2.5.4 で既存 test 6 件も成功。
 - [x] 元 ONNX `d69827e...acd6` → ConvRot + UINT8 保存 37,398,158 bytes（SHA-256 `175c0545...7d25`）。配布元モデルとグラフ同一、UINT8 要素の 2.4e-6 だけ 1 LSB 差。
 - [x] `just e2e-cpu` 8/8（i7-9750H、6 threads、約 2 分 10 秒）。extra なしの環境ではスキップ。未知領域 MAE は retriever 0.000934 / bulb 0.001104（元 FP32 ORT 比）。
 - [x] Release `cpu-convrot-uint8-v0.1.0` にモデルと manifest を配置。
@@ -90,6 +90,6 @@
 
 - **主要リポジトリ/ディレクトリ:** exporter=`.`、runtime=`../diffmatte_onnx`、checkpoint=`../diffmatte_sandbox/checkpoints/DiffMatte_ViTS_Com_1024.pth`。
 - **代表的なコマンド:** `uv sync --extra export --extra dev`、`uv run pytest`、README/justfile の export・validate 例。
-- **依存ライブラリ:** lock 済み Python 3.11、torch CPU、ONNX、ONNX Script、ONNX Runtime、OmegaConf。
+- **依存ライブラリ:** lock 済み Python 3.12、torch CPU 2.14、numpy 2.5、ONNX、ONNX Script、ONNX Runtime、OmegaConf。extra `cpu` で onnxsim・OpenVINO。
 - **連絡先/責任者:** 未確認。remote は `git@github.com:yuki-inaho/DiffMatte.git`。
 

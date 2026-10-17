@@ -26,6 +26,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--atol", type=float, default=3e-4)
     parser.add_argument("--rtol", type=float, default=3e-4)
     parser.add_argument("--legacy-exporter", action="store_true", help="Use TorchScript-based exporter fallback")
+    parser.add_argument(
+        "--dynamic-batch",
+        action="store_true",
+        help="Export a symbolic batch dimension (default: fixed N=1, the contract of the released models)",
+    )
     return parser.parse_args()
 
 
@@ -43,18 +48,18 @@ def _export(
     *,
     opset: int,
     legacy: bool,
+    dynamic_batch: bool,
 ) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     input_names = ["image", "trimap", "initial_noise"]
     output_names = ["alpha"]
 
     if not legacy:
-        batch = torch.export.Dim("batch", min=1)
-        dynamic_shapes = (
-            {0: batch},
-            {0: batch},
-            {0: batch},
-        )
+        # PyTorch 2.7 specialized the batch-1 example to a static 1; newer releases keep the symbol.
+        dynamic_shapes = None
+        if dynamic_batch:
+            batch = torch.export.Dim("batch", min=1)
+            dynamic_shapes = ({0: batch}, {0: batch}, {0: batch})
         try:
             torch.onnx.export(
                 sampler,
@@ -87,7 +92,9 @@ def _export(
             "trimap": {0: "batch"},
             "initial_noise": {0: "batch"},
             "alpha": {0: "batch"},
-        },
+        }
+        if dynamic_batch
+        else None,
         do_constant_folding=True,
     )
 
@@ -171,6 +178,7 @@ def main() -> None:
             args.output,
             opset=args.opset,
             legacy=args.legacy_exporter,
+            dynamic_batch=args.dynamic_batch,
         )
 
     dynamic_batch = _check_onnx(args.output)

@@ -26,7 +26,6 @@ from diffmatte_cpu.run_diffmatte import read_source_inputs  # noqa: E402
 pytestmark = pytest.mark.e2e
 
 SEED = 42
-ORIGINAL_BYTES = 124_720_701
 # bulb は 960x640 のため、右・下を端の画素で 643 行まで埋めて推論し、元寸法へ戻します。
 IMAGES = {"retriever": False, "bulb": True}
 # 元モデルとの未知領域の一致度の上限。配布時の実測 (EPYC 9V74) に約 2 倍の余裕を持たせています。
@@ -79,9 +78,9 @@ def reference_alpha(e2e_dir: Path, original_onnx: Path, e2e_threads: int):
     return get
 
 
-def test_conversion_shrinks_model_and_keeps_contract(converted: Path) -> None:
+def test_conversion_shrinks_model_and_keeps_contract(converted: Path, original_onnx: Path) -> None:
     size = converted.stat().st_size
-    assert size <= 0.32 * ORIGINAL_BYTES, f"圧縮後 {size} bytes は元の 32% を超えています"
+    assert size <= 0.32 * original_onnx.stat().st_size, f"圧縮後 {size} bytes は元の 32% を超えています"
 
     model = onnx.load(str(converted))
     onnx.checker.check_model(model)

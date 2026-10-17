@@ -57,13 +57,18 @@ def e2e_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
 @pytest.fixture(scope="session")
 def original_onnx() -> Path:
     configured = os.environ.get("DIFFMATTE_ORIGINAL_ONNX")
-    candidates = (Path(configured).expanduser(),) if configured else ORIGINAL_CANDIDATES
-    for candidate in candidates:
+    if configured:
+        # 明示した場合は手元で export し直したモデルも受け付けます（SHA-256 は照合しません）。
+        path = Path(configured).expanduser().resolve()
+        if not path.is_file():
+            pytest.fail(f"DIFFMATTE_ORIGINAL_ONNX が存在しません: {path}")
+        return path
+    for candidate in ORIGINAL_CANDIDATES:
         if candidate.is_file():
             path = candidate.resolve()
-            assert sha256(path) == ORIGINAL_SHA256, f"元 ONNX の SHA-256 が一致しません: {path}"
+            assert sha256(path) == ORIGINAL_SHA256, f"元 ONNX の SHA-256 が Release と一致しません: {path}"
             return path
     pytest.skip(
         "元の FP32 ONNX がありません。`just fetch-original-onnx` で取得するか、"
-        "DIFFMATTE_ORIGINAL_ONNX で場所を指定してください: " + ", ".join(map(str, candidates))
+        "DIFFMATTE_ORIGINAL_ONNX で場所を指定してください: " + ", ".join(map(str, ORIGINAL_CANDIDATES))
     )

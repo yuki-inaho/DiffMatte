@@ -7,33 +7,32 @@ name = "diffmatte-exporter"
 version = "0.1.0"
 description = "Detectron2-free DiffMatte checkpoint to ONNX exporter and CPU ConvRot/UINT8 inference tools"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.12,<3.14"
 license = "MIT"
 dependencies = [
   "einops>=0.7,<1",
-  "numpy>=1.26,<3",
+  "numpy>=2.3,<2.6",
   "omegaconf>=2.3,<3",
-  "opencv-python-headless>=4.10,<5",
-  "pillow>=10,<13",
-  "torch>=2.7,<2.8",
+  "opencv-python-headless>=4.10,<6",
+  "pillow>=12,<14",
+  "torch>=2.14,<3",
   "tqdm>=4.66,<5",
 ]
 
 [project.optional-dependencies]
 export = [
-  "onnx>=1.17,<2",
-  "onnxruntime>=1.20,<2",
-  "onnxscript>=0.2,<1",
+  "onnx>=1.23,<2",
+  "onnxruntime>=1.31,<2",
+  "onnxscript>=0.7,<1",
 ]
 # CPU 推論: ConvRot + UINT8 重み保存モデルの変換と OpenVINO / ONNX Runtime CPU 実行。
-# --keep-head-fp32 は OpenVINO 2026.4.1 の内部属性に依存するため版を固定します。
+# --keep-head-fp32 は OpenVINO 2026.4.1 の内部属性に依存するため OpenVINO だけ版を固定します。
 cpu = [
-  "numpy==2.3.5",
-  "onnx==1.23.2",
-  "onnxruntime==1.31.0",
-  "onnxsim==0.8.1",
+  "onnx>=1.23,<2",
+  "onnxruntime>=1.31,<2",
+  "onnxsim>=0.8.1,<1",
   "openvino==2026.4.1",
-  "psutil==7.2.2",
+  "psutil>=7,<8",
 ]
 dev = [
   "pytest>=8.3,<9",
@@ -61,7 +60,7 @@ markers = [
 
 [tool.ruff]
 line-length = 110
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 # ruff 0.16 で既定ルールが広がったため、従来の既定セットを明示します。

@@ -1,6 +1,6 @@
 # DiffMatte CPU: ConvRot + UINT8 重み保存
 
-exporter が出力する固定形状 FP32 ONNX（`diffmatte_vits_1024_ddim10_643x960.onnx`、124.72 MB）を、CPU 推論用の 37.40 MB モデルへ変換し、OpenVINO / ONNX Runtime の CPU で実行します。パッケージ `diffmatte_cpu/` と optional extra `cpu` として同じ uv プロジェクトに含めています（Python 3.12、numpy 2.3.5）。
+exporter が出力する固定形状 FP32 ONNX（`diffmatte_vits_1024_ddim10_643x960.onnx`、124.72 MB）を、CPU 推論用の 37.40 MB モデルへ変換し、OpenVINO / ONNX Runtime の CPU で実行します。パッケージ `diffmatte_cpu/` と optional extra `cpu` として同じ uv プロジェクトに含めています（Python 3.12、OpenVINO 2026.4.1 のみ固定、他は最新系の範囲指定）。
 
 - 変換: onnxsim → ORT BASIC 最適化 → Gemm 分解 → 48 個の線形層へ ConvRot の正則 Hadamard 回転（64 要素組）→ 主な重みを UINT8 保存（畳み込みは 16 要素組の affine、割り切れない重みはチャンネル別）。出力 matting head の重み、正規化・バイアス等は FP32 のまま。
 - 推論: 入出力は float32。推奨は **OpenVINO CPU で BF16、matting head（10 ステップ × 2 Conv 等 60 ノード）だけ FP32** の実行。全演算を UINT8 にするモデルではありません。
@@ -11,7 +11,7 @@ ConvRot は論文 <https://arxiv.org/abs/2512.03673> の回転を標準 ONNX 演
 ## セットアップ
 
 ```bash
-just sync-cpu             # uv sync --extra export --extra cpu --extra dev（cpu extra の版は固定）
+just sync-cpu             # uv sync --extra export --extra cpu --extra dev（OpenVINO は 2026.4.1 固定）
 just fetch-original-onnx  # Release gtx1070-onnx-v0.1.0 から元 ONNX を取得し SHA-256 を照合
 ```
 
@@ -74,6 +74,10 @@ Release のモデルを使う場合は `gh release download cpu-convrot-uint8-v0
 | **UINT8 保存 / OpenVINO BF16 ＋ head FP32** | **2.948 秒** | **3.053 秒** | **2.46 / 2.13** |
 
 推奨設定（BF16 実行）の未知領域 MAE は 0.001452 / 0.001648、最大差 0.0625 / 0.1155 でした。BF16 による 2 倍超の高速化は BF16 対応 CPU でのみ得られます。
+
+### 依存の更新（2026-10-17）
+
+torch 2.14.1+cpu、numpy 2.5.4、onnx 1.23.2、ORT 1.31.0、onnxsim 0.8.1、opencv 5.0、pillow 13.0 に上げて再検証しました。Release 版の元 ONNX からの変換結果は SHA-256 `175c0545…7d25` のまま変わらず、E2E 8/8 件成功。torch 2.14 で checkpoint から export し直した ONNX（固定形状、PyTorch との最大差 1.53e-5）を元にした場合も E2E 7 件成功（配布モデル照合はグラフが異なるため対象外）で、一致度指標は同一でした。
 
 ### 再現性
 
