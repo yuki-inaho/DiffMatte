@@ -48,6 +48,17 @@ uv run diffmatte-export-onnx \
 
 The fixed-shape graph accepts float32 `image`, `trimap`, and `initial_noise` tensors and returns `alpha`. The demonstrated artifact has shapes `image=[1,3,643,960]`, `trimap/initial_noise/alpha=[1,1,643,960]`. See [`docs/ONBOARDING.md`](docs/ONBOARDING.md) for checkpoint provenance, parity validation, and the separate ONNX-only runtime workflow.
 
+## CPU: ConvRot + UINT8 weight storage (optional `cpu` extra)
+
+The optional `cpu` extra and the `diffmatte_cpu` package convert the exported FP32 ONNX into a 37.4 MB model (ConvRot regular-Hadamard rotation on 48 linear layers, UINT8 weight storage, FP32 matting head) and run it on CPU with OpenVINO (BF16 + FP32 head) or ONNX Runtime. The converted model is published as release [`cpu-convrot-uint8-v0.1.0`](https://github.com/yuki-inaho/DiffMatte/releases/tag/cpu-convrot-uint8-v0.1.0). See [`docs/CPU_CONVROT.md`](docs/CPU_CONVROT.md) for measurements and the end-to-end test.
+
+```bash
+just sync-cpu && just fetch-original-onnx
+just convert-cpu
+just infer-cpu
+just e2e-cpu
+```
+
 ## Quick Installation 
 Our approach is developed in : Python3.88, PyTorch 2.0, CUDA 11.7, CuDNN 8.5.
 

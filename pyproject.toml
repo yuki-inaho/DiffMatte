@@ -5,13 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "diffmatte-exporter"
 version = "0.1.0"
-description = "Detectron2-free DiffMatte checkpoint to ONNX exporter"
+description = "Detectron2-free DiffMatte checkpoint to ONNX exporter and CPU ConvRot/UINT8 inference tools"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = "MIT"
 dependencies = [
   "einops>=0.7,<1",
-  "numpy>=1.26,<2",
+  "numpy>=1.26,<3",
   "omegaconf>=2.3,<3",
   "opencv-python-headless>=4.10,<5",
   "pillow>=10,<13",
@@ -25,6 +25,16 @@ export = [
   "onnxruntime>=1.20,<2",
   "onnxscript>=0.2,<1",
 ]
+# CPU 推論: ConvRot + UINT8 重み保存モデルの変換と OpenVINO / ONNX Runtime CPU 実行。
+# --keep-head-fp32 は OpenVINO 2026.4.1 の内部属性に依存するため版を固定します。
+cpu = [
+  "numpy==2.3.5",
+  "onnx==1.23.2",
+  "onnxruntime==1.31.0",
+  "onnxsim==0.8.1",
+  "openvino==2026.4.1",
+  "psutil==7.2.2",
+]
 dev = [
   "pytest>=8.3,<9",
   "ruff>=0.12,<1",
@@ -33,17 +43,29 @@ dev = [
 [project.scripts]
 diffmatte-export-onnx = "diffmatte_onnx.export:main"
 diffmatte-validate-onnx = "diffmatte_onnx.validate:main"
+diffmatte-cpu-convert = "diffmatte_cpu.convert_diffmatte:main"
+diffmatte-cpu-run-ort = "diffmatte_cpu.run_diffmatte:main"
+diffmatte-cpu-run-openvino = "diffmatte_cpu.run_openvino:main"
+diffmatte-cpu-benchmark = "diffmatte_cpu.benchmark_models:main"
+diffmatte-cpu-prepare-inputs = "diffmatte_cpu.prepare_inputs:main"
 
 [tool.setuptools.packages.find]
-include = ["diffmatte_onnx*", "modeling*"]
+include = ["diffmatte_onnx*", "diffmatte_cpu*", "modeling*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q -m 'not e2e'"
+markers = [
+  "e2e: 元 ONNX から CPU 用モデルへ変換し、実画像で ORT/OpenVINO 推論まで通す重いテスト (--extra cpu)",
+]
 
 [tool.ruff]
 line-length = 110
 target-version = "py311"
+
+[tool.ruff.lint]
+# ruff 0.16 で既定ルールが広がったため、従来の既定セットを明示します。
+select = ["E4", "E7", "E9", "F"]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }

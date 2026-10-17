@@ -29,6 +29,7 @@
 | 比較ツール | `diffmatte_onnx/validate.py` | 同一画像・trimap・noise の PyTorch/ORT 比較 |
 | 推論先 | `../diffmatte_onnx/docs/ONBOARDING.md` | ONNX-only runtime と成果物 inventory |
 | 既知課題リスト | 本書「制約」 | 固定 shape、legacy/CUDA 未検証 |
+| CPU 軽量化 | `docs/CPU_CONVROT.md` | ConvRot + UINT8 保存モデルの変換、OpenVINO/ORT CPU 推論、E2E テスト、実測 |
 
 ## 4. タスク境界（任せること / 任せないこと）
 
@@ -74,6 +75,14 @@
 - [x] export 検証 max `1.52587890625e-05` / mean `4.465637175599113e-07`。
 - [x] 公式画像 E2E max `4.589557647705078e-06` / mean `3.0285896457371564e-08`。
 - [ ] legacy Detectron2 inference、training、CUDA provider は未検証。
+
+### CPU 軽量化（`diffmatte_cpu/` + extra `cpu`、2026-10-17）
+
+- 同じ uv プロジェクトの optional extra `cpu`（numpy 2.3.5、onnx 1.23.2、ORT 1.31.0、onnxsim 0.8.1、OpenVINO 2026.4.1 固定）。これに合わせ `.python-version` を 3.12、base の numpy を `<3` に緩和。Python 3.12.14 / torch 2.7.1+cpu で既存 test 6 件も成功。
+- [x] 元 ONNX `d69827e...acd6` → ConvRot + UINT8 保存 37,398,158 bytes（SHA-256 `175c0545...7d25`）。配布元モデルとグラフ同一、UINT8 要素の 2.4e-6 だけ 1 LSB 差。
+- [x] `just e2e-cpu` 8/8（i7-9750H、6 threads、約 2 分 10 秒）。extra なしの環境ではスキップ。未知領域 MAE は retriever 0.000934 / bulb 0.001104（元 FP32 ORT 比）。
+- [x] Release `cpu-convrot-uint8-v0.1.0` にモデルと manifest を配置。
+- [ ] BF16 実行（AVX-512 BF16 / AMX）はこのマシンで未検証。i7-9750H では BF16 指定が FP32 に戻り、元 ORT 比 1.45 / 1.13 倍。配布元の EPYC 9V74 では 2.46 / 2.13 倍。
 
 ---
 
