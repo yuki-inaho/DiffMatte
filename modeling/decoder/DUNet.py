@@ -69,10 +69,10 @@ class Upsample(nn.Module):
         assert x.shape[1] == self.in_channels
         if self.dims == 3:
             x = F.interpolate(
-                x, (x.shape[2], x.shape[3] * 2, x.shape[4] * 2), mode="bilinear"
+                x, (x.shape[2], x.shape[3] * 2, x.shape[4] * 2), mode="bilinear", align_corners=False
             )
         else:
-            x = F.interpolate(x, scale_factor=2, mode="bilinear")
+            x = F.interpolate(x, scale_factor=2, mode="bilinear", align_corners=False)
         if self.use_conv:
             x = self.conv(x)
         return x
@@ -147,7 +147,7 @@ class BasicDownBlock(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
 
-        if self.downsample != None:
+        if self.downsample is not None:
             identity = self.downsample(x)
 
         out += identity
@@ -204,7 +204,7 @@ class BasicUpBlock(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
 
-        if self.upsample != None:
+        if self.upsample is not None:
             identity = self.upsample(x)
 
         out += identity
@@ -332,4 +332,3 @@ if __name__ == '__main__':
     out = model(features, inputs, timesteps)
     phas = out['phas']
     print(phas.shape)
-

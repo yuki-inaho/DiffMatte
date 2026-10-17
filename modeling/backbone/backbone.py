@@ -1,11 +1,18 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 from abc import ABCMeta, abstractmethod
+from dataclasses import dataclass
 from typing import Dict
 import torch.nn as nn
 
-from detectron2.layers import ShapeSpec
-
 __all__ = ["Backbone"]
+
+
+@dataclass(frozen=True)
+class ShapeSpec:
+    channels: int | None = None
+    height: int | None = None
+    width: int | None = None
+    stride: int | None = None
 
 
 class Backbone(nn.Module, metaclass=ABCMeta):

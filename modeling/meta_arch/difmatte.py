@@ -1,12 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
 import os
 import cv2
 import numpy as np
 
-from detectron2.structures import ImageList
 
 class DifMatte(nn.Module):
     def __init__(self,
